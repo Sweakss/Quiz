@@ -1,277 +1,392 @@
-// Storage Key
-const STORAGE_KEY = 'custom_quiz_cards';
-
-// Global State
-let cards = [];
-let activeQueue = [];
-let currentCardIndex = 0;
-let uploadedImageBase64 = '';
-
-// Default sample data
-const sampleCards = [
-  {
-    id: '1',
-    prompt: 'What organelle produces ATP in eukaryotic cells?',
-    image: '',
-    answer: 'mitochondria, mitochondrion',
-    hint: 'Known as the powerhouse of the cell.'
-  },
-  {
-    id: '2',
-    prompt: 'Identify this functional chemical group:',
-    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Hydroxide_formula.svg/200px-Hydroxide_formula.svg.png',
-    answer: 'hydroxyl, alcohol',
-    hint: 'Consists of one hydrogen atom bonded to one oxygen atom (-OH).'
-  }
-];
-
-// Initialize Application
-document.addEventListener('DOMContentLoaded', () => {
-  loadCards();
-  setupEvents();
-  renderAll();
-});
-
-function loadCards() {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored) {
-    cards = JSON.parse(stored);
-  } else {
-    cards = [...sampleCards];
-    saveCards();
-  }
-  activeQueue = [...cards];
+:root {
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --success: #16a34a;
+  --success-hover: #15803d;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --danger-hover: #b91c1c;
+  --bg: #0f172a;
+  --card-bg: #1e293b;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --border: #334155;
 }
 
-function saveCards() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  margin: 0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-function setupEvents() {
-  document.getElementById('userInput').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') checkAnswer();
-  });
+.app-header {
+  text-align: center;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 650px;
 }
 
-function renderAll() {
-  updateStats();
-  renderPracticeCard();
-  renderManageList();
+.app-header h1 {
+  margin: 0 0 16px 0;
+  font-size: 1.8rem;
 }
 
-function updateStats() {
-  document.getElementById('statTotal').textContent = cards.length;
-  document.getElementById('statRemaining').textContent = activeQueue.length;
+/* Tab Navigation */
+.tab-nav {
+  display: flex;
+  gap: 8px;
+  background-color: var(--card-bg);
+  padding: 6px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
 }
 
-function renderPracticeCard() {
-  const display = document.getElementById('quizDisplay');
-  const feedback = document.getElementById('feedback');
-  feedback.textContent = '';
-  document.getElementById('userInput').value = '';
-
-  if (activeQueue.length === 0) {
-    if (cards.length > 0) {
-      display.innerHTML = `
-        <p class="quiz-prompt-text">🎉 Session Complete!</p>
-        <button class="btn btn-skip" onclick="resetSession()">Restart Practice Session</button>
-      `;
-    } else {
-      display.innerHTML = `<p class="empty-msg">No cards available. Add some cards below to start practicing!</p>`;
-    }
-    return;
-  }
-
-  const current = activeQueue[currentCardIndex];
-  let html = '';
-
-  if (current.prompt) {
-    html += `<div class="quiz-prompt-text">${escapeHtml(current.prompt)}</div>`;
-  }
-  if (current.image) {
-    html += `<img src="${current.image}" class="quiz-prompt-img" alt="Quiz Image">`;
-  }
-
-  display.innerHTML = html;
-  document.getElementById('userInput').focus();
+.tab-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-function checkAnswer() {
-  if (activeQueue.length === 0) return;
-
-  const userVal = document.getElementById('userInput').value.trim().toLowerCase();
-  const current = activeQueue[currentCardIndex];
-  const validAnswers = current.answer.split(',').map(a => a.trim().toLowerCase());
-  const feedback = document.getElementById('feedback');
-
-  if (validAnswers.includes(userVal)) {
-    feedback.style.color = 'var(--success)';
-    feedback.textContent = 'Correct!';
-    
-    setTimeout(() => {
-      // Remove learned card from active queue for this session
-      activeQueue.splice(currentCardIndex, 1);
-      if (currentCardIndex >= activeQueue.length) {
-        currentCardIndex = 0;
-      }
-      renderAll();
-    }, 800);
-  } else {
-    feedback.style.color = 'var(--danger)';
-    feedback.textContent = `Incorrect. Acceptable answers: "${current.answer}"`;
-  }
+.tab-btn:hover {
+  color: var(--text);
 }
 
-function skipCard() {
-  if (activeQueue.length <= 1) return;
-  currentCardIndex = (currentCardIndex + 1) % activeQueue.length;
-  renderPracticeCard();
+.tab-btn.active {
+  background-color: var(--primary);
+  color: white;
 }
 
-function showHint() {
-  if (activeQueue.length === 0) return;
-  const current = activeQueue[currentCardIndex];
-  const feedback = document.getElementById('feedback');
-  
-  feedback.style.color = 'var(--warning)';
-  if (current.hint) {
-    feedback.textContent = `Hint: ${current.hint}`;
-  } else {
-    feedback.textContent = `Hint: Starts with "${current.answer.trim().charAt(0)}..."`;
-  }
+.app-container {
+  width: 100%;
+  max-width: 650px;
 }
 
-function resetSession() {
-  activeQueue = [...cards];
-  currentCardIndex = 0;
-  renderAll();
+/* Deck Selector */
+.deck-selector-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: var(--card-bg);
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
 }
 
-function addSymbol(sym) {
-  const input = document.getElementById('userInput');
-  input.value += sym;
-  input.focus();
+.deck-selector-bar label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
 }
 
-// File Upload Handler (Base64)
-function handleFileUpload(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    uploadedImageBase64 = e.target.result;
-    document.getElementById('imagePreview').src = uploadedImageBase64;
-    document.getElementById('imagePreviewContainer').style.display = 'block';
-    document.getElementById('imageUrl').value = ''; // clear text URL
-  };
-  reader.readAsDataURL(file);
+select {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background-color: #0f172a;
+  color: var(--text);
+  font-size: 0.95rem;
+  outline: none;
 }
 
-function removeSelectedImage() {
-  uploadedImageBase64 = '';
-  document.getElementById('imageFile').value = '';
-  document.getElementById('imagePreviewContainer').style.display = 'none';
+/* Tab Visibility Logic */
+.tab-content {
+  display: none;
 }
 
-// Card Creation
-function handleCardSubmit(e) {
-  e.preventDefault();
-
-  const prompt = document.getElementById('promptText').value.trim();
-  const imageUrlInput = document.getElementById('imageUrl').value.trim();
-  const answer = document.getElementById('correctAnswer').value.trim();
-  const hint = document.getElementById('hintText').value.trim();
-
-  const finalImage = uploadedImageBase64 || imageUrlInput;
-
-  if (!prompt && !finalImage) {
-    alert('Please enter a question prompt OR provide an image!');
-    return;
-  }
-
-  const newCard = {
-    id: Date.now().toString(),
-    prompt,
-    image: finalImage,
-    answer,
-    hint
-  };
-
-  cards.push(newCard);
-  activeQueue.push(newCard);
-  saveCards();
-
-  // Reset form
-  document.getElementById('createForm').reset();
-  removeSelectedImage();
-
-  renderAll();
+.tab-content.active {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-// Render Manage Cards List
-function renderManageList() {
-  const container = document.getElementById('cardList');
-  container.innerHTML = '';
-
-  if (cards.length === 0) {
-    container.innerHTML = '<p class="empty-msg">No cards in library.</p>';
-    return;
-  }
-
-  cards.forEach(card => {
-    const item = document.createElement('div');
-    item.className = 'list-item';
-
-    const promptText = card.prompt || '[Image Only Question]';
-    const thumbHtml = card.image 
-      ? `<img src="${card.image}" class="item-thumb" alt="Thumb">` 
-      : '';
-
-    item.innerHTML = `
-      <div class="item-content">
-        ${thumbHtml}
-        <div class="item-info">
-          <span class="item-prompt">${escapeHtml(promptText)}</span>
-          <span class="item-answer">Answer: ${escapeHtml(card.answer)}</span>
-        </div>
-      </div>
-      <button class="btn-delete" onclick="deleteCard('${card.id}')">Delete</button>
-    `;
-
-    container.appendChild(item);
-  });
+.stats-bar {
+  display: flex;
+  justify-content: space-between;
+  background-color: var(--card-bg);
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
 }
 
-// Delete Single Card Functionality
-function deleteCard(id) {
-  if (confirm('Are you sure you want to delete this card?')) {
-    // Remove from main list
-    cards = cards.filter(c => c.id !== id);
-    // Remove from active practice queue
-    activeQueue = activeQueue.filter(c => c.id !== id);
-    
-    if (currentCardIndex >= activeQueue.length) {
-      currentCardIndex = 0;
-    }
-
-    saveCards();
-    renderAll();
-  }
+.card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-// Delete All Cards
-function clearAllCards() {
-  if (confirm('Are you sure you want to delete ALL cards? This cannot be undone.')) {
-    cards = [];
-    activeQueue = [];
-    currentCardIndex = 0;
-    saveCards();
-    renderAll();
-  }
+.card h2 {
+  margin-top: 0;
+  font-size: 1.25rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+  margin-bottom: 16px;
 }
 
-// Utility function to avoid HTML injection
-function escapeHtml(str) {
-  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+/* Practice View */
+.quiz-display {
+  background-color: #0f172a;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 16px;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.quiz-prompt-text {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0 0 10px 0;
+}
+
+.quiz-prompt-img {
+  max-width: 100%;
+  max-height: 250px;
+  border-radius: 6px;
+  object-fit: contain;
+}
+
+.input-group input[type="text"],
+.form-group input[type="text"] {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background-color: #0f172a;
+  color: var(--text);
+  box-sizing: border-box;
+}
+
+.input-group input[type="text"]:focus,
+.form-group input[type="text"]:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.symbol-bar {
+  display: flex;
+  gap: 6px;
+  margin: 10px 0;
+  flex-wrap: wrap;
+}
+
+.sym-btn {
+  background-color: var(--border);
+  color: var(--text);
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.sym-btn:hover {
+  background-color: var(--text-muted);
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn {
+  flex: 1;
+  padding: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: white;
+  transition: background-color 0.2s;
+}
+
+.btn-submit { background-color: var(--success); }
+.btn-submit:hover { background-color: var(--success-hover); }
+
+.btn-skip { background-color: var(--primary); }
+.btn-skip:hover { background-color: var(--primary-hover); }
+
+.btn-hint { background-color: var(--warning); }
+.btn-hint:hover { opacity: 0.9; }
+
+.btn-danger-outline {
+  background: transparent;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.btn-danger-outline:hover { background: var(--danger); color: white; }
+
+.full-width { width: 100%; }
+
+.feedback-msg {
+  margin-top: 12px;
+  font-weight: bold;
+  text-align: center;
+  min-height: 24px;
+}
+
+/* Forms & Inputs */
+.form-group {
+  margin-bottom: 14px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.inline-form {
+  display: flex;
+  gap: 10px;
+}
+
+.inline-form input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background-color: #0f172a;
+  color: var(--text);
+}
+
+.required { color: var(--danger); }
+
+.image-input-toggle {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.divider {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.image-preview-box {
+  margin-top: 10px;
+}
+
+.image-preview-box img {
+  max-height: 120px;
+  border-radius: 6px;
+}
+
+.btn-remove-img {
+  display: block;
+  margin-top: 4px;
+  background: var(--danger);
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+/* Manager Section */
+.manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+  margin-bottom: 16px;
+}
+
+.manager-header h2 {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #0f172a;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.item-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.item-thumb {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.item-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.item-prompt {
+  font-weight: 600;
+}
+
+.item-answer {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.btn-delete {
+  background-color: var(--danger);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-delete:hover {
+  background-color: var(--danger-hover);
+}
+
+.empty-msg {
+  color: var(--text-muted);
+  font-style: italic;
 }
