@@ -1,392 +1,379 @@
-:root {
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --success: #16a34a;
-  --success-hover: #15803d;
-  --warning: #d97706;
-  --danger: #dc2626;
-  --danger-hover: #b91c1c;
-  --bg: #0f172a;
-  --card-bg: #1e293b;
-  --text: #f8fafc;
-  --text-muted: #94a3b8;
-  --border: #334155;
+// Storage Key
+const STORAGE_KEY = 'custom_quiz_app_decks';
+
+// Global State
+let decks = {}; // Format: { "DeckName": [ { cardObj }, ... ] }
+let activeDeckName = 'Default Group';
+let activeQueue = [];
+let currentCardIndex = 0;
+let uploadedImageBase64 = '';
+
+// Sample Default Data
+const defaultDecks = {
+  "Biology": [
+    {
+      id: '1',
+      prompt: 'What organelle produces ATP in eukaryotic cells?',
+      image: '',
+      answer: 'mitochondria, mitochondrion',
+      hint: 'Powerhouse of the cell.'
+    }
+  ],
+  "Chemistry": [
+    {
+      id: '2',
+      prompt: 'Identify this functional chemical group:',
+      image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/18/Hydroxide_formula.svg/200px-Hydroxide_formula.svg.png',
+      answer: 'hydroxyl, alcohol',
+      hint: 'Contains oxygen and hydrogen (-OH).'
+    }
+  ]
+};
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+  loadData();
+  setupEvents();
+  renderDeckSelectors();
+  renderAll();
+});
+
+function loadData() {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) {
+    decks = JSON.parse(stored);
+  } else {
+    decks = defaultDecks;
+    saveData();
+  }
+  
+  const deckNames = Object.keys(decks);
+  if (deckNames.length > 0) {
+    activeDeckName = deckNames[0];
+  }
+  resetQueue();
 }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background-color: var(--bg);
-  color: var(--text);
-  margin: 0;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(decks));
 }
 
-.app-header {
-  text-align: center;
-  margin-bottom: 20px;
-  width: 100%;
-  max-width: 650px;
+function setupEvents() {
+  document.getElementById('userInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') checkAnswer();
+  });
 }
 
-.app-header h1 {
-  margin: 0 0 16px 0;
-  font-size: 1.8rem;
+// Tab Switching Logic
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+  document.getElementById(tabId).classList.add('active');
+  
+  const navBtns = document.querySelectorAll('.tab-btn');
+  if (tabId === 'practiceTab') navBtns[0].classList.add('active');
+  if (tabId === 'createTab') navBtns[1].classList.add('active');
+  if (tabId === 'manageTab') navBtns[2].classList.add('active');
+
+  renderAll();
 }
 
-/* Tab Navigation */
-.tab-nav {
-  display: flex;
-  gap: 8px;
-  background-color: var(--card-bg);
-  padding: 6px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
+// Deck Selectors
+function renderDeckSelectors() {
+  const deckSelect = document.getElementById('deckSelect');
+  const targetDeckSelect = document.getElementById('targetDeckSelect');
+  
+  deckSelect.innerHTML = '';
+  targetDeckSelect.innerHTML = '';
+
+  const names = Object.keys(decks);
+
+  if (names.length === 0) {
+    deckSelect.innerHTML = '<option value="">No Groups Found</option>';
+    targetDeckSelect.innerHTML = '<option value="">No Groups Found</option>';
+    return;
+  }
+
+  names.forEach(name => {
+    const opt1 = document.createElement('option');
+    opt1.value = name;
+    opt1.textContent = name;
+    if (name === activeDeckName) opt1.selected = true;
+    deckSelect.appendChild(opt1);
+
+    const opt2 = document.createElement('option');
+    opt2.value = name;
+    opt2.textContent = name;
+    if (name === activeDeckName) opt2.selected = true;
+    targetDeckSelect.appendChild(opt2);
+  });
 }
 
-.tab-btn {
-  flex: 1;
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  padding: 10px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
+function handleDeckChange() {
+  const select = document.getElementById('deckSelect');
+  activeDeckName = select.value;
+  document.getElementById('targetDeckSelect').value = activeDeckName;
+  resetQueue();
+  renderAll();
 }
 
-.tab-btn:hover {
-  color: var(--text);
+function handleDeckSubmit(e) {
+  e.preventDefault();
+  const input = document.getElementById('newDeckName');
+  const name = input.value.trim();
+
+  if (!name) return;
+  if (decks[name]) {
+    alert('A group with this name already exists!');
+    return;
+  }
+
+  decks[name] = [];
+  activeDeckName = name;
+  saveData();
+
+  input.value = '';
+  renderDeckSelectors();
+  resetQueue();
+  renderAll();
 }
 
-.tab-btn.active {
-  background-color: var(--primary);
-  color: white;
+function resetQueue() {
+  if (decks[activeDeckName]) {
+    activeQueue = [...decks[activeDeckName]];
+  } else {
+    activeQueue = [];
+  }
+  currentCardIndex = 0;
 }
 
-.app-container {
-  width: 100%;
-  max-width: 650px;
+function renderAll() {
+  updateStats();
+  renderPracticeCard();
+  renderManageList();
 }
 
-/* Deck Selector */
-.deck-selector-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background-color: var(--card-bg);
-  padding: 12px 16px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  margin-bottom: 16px;
+function updateStats() {
+  const total = decks[activeDeckName] ? decks[activeDeckName].length : 0;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statRemaining').textContent = activeQueue.length;
 }
 
-.deck-selector-bar label {
-  font-weight: 600;
-  font-size: 0.9rem;
-  white-space: nowrap;
+// Practice Rendering & Logic
+function renderPracticeCard() {
+  const display = document.getElementById('quizDisplay');
+  const feedback = document.getElementById('feedback');
+  feedback.textContent = '';
+  document.getElementById('userInput').value = '';
+
+  if (activeQueue.length === 0) {
+    const totalInDeck = decks[activeDeckName] ? decks[activeDeckName].length : 0;
+    if (totalInDeck > 0) {
+      display.innerHTML = `
+        <p class="quiz-prompt-text">🎉 Group Practice Complete!</p>
+        <button class="btn btn-skip" onclick="resetQueue(); renderAll();">Restart Group</button>
+      `;
+    } else {
+      display.innerHTML = `<p class="empty-msg">No cards in this group. Add cards in the 'Create Card' tab!</p>`;
+    }
+    return;
+  }
+
+  const current = activeQueue[currentCardIndex];
+  let html = '';
+
+  if (current.prompt) {
+    html += `<div class="quiz-prompt-text">${escapeHtml(current.prompt)}</div>`;
+  }
+  if (current.image) {
+    html += `<img src="${current.image}" class="quiz-prompt-img" alt="Quiz Image">`;
+  }
+
+  display.innerHTML = html;
+  document.getElementById('userInput').focus();
 }
 
-select {
-  width: 100%;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background-color: #0f172a;
-  color: var(--text);
-  font-size: 0.95rem;
-  outline: none;
+function checkAnswer() {
+  if (activeQueue.length === 0) return;
+
+  const userVal = document.getElementById('userInput').value.trim().toLowerCase();
+  const current = activeQueue[currentCardIndex];
+  const validAnswers = current.answer.split(',').map(a => a.trim().toLowerCase());
+  const feedback = document.getElementById('feedback');
+
+  if (validAnswers.includes(userVal)) {
+    feedback.style.color = 'var(--success)';
+    feedback.textContent = 'Correct!';
+    
+    setTimeout(() => {
+      activeQueue.splice(currentCardIndex, 1);
+      if (currentCardIndex >= activeQueue.length) {
+        currentCardIndex = 0;
+      }
+      renderAll();
+    }, 800);
+  } else {
+    feedback.style.color = 'var(--danger)';
+    feedback.textContent = `Incorrect. Acceptable answers: "${current.answer}"`;
+  }
 }
 
-/* Tab Visibility Logic */
-.tab-content {
-  display: none;
+function skipCard() {
+  if (activeQueue.length <= 1) return;
+  currentCardIndex = (currentCardIndex + 1) % activeQueue.length;
+  renderPracticeCard();
 }
 
-.tab-content.active {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+function showHint() {
+  if (activeQueue.length === 0) return;
+  const current = activeQueue[currentCardIndex];
+  const feedback = document.getElementById('feedback');
+  
+  feedback.style.color = 'var(--warning)';
+  if (current.hint) {
+    feedback.textContent = `Hint: ${current.hint}`;
+  } else {
+    feedback.textContent = `Hint: Starts with "${current.answer.trim().charAt(0)}..."`;
+  }
 }
 
-.stats-bar {
-  display: flex;
-  justify-content: space-between;
-  background-color: var(--card-bg);
-  padding: 12px 20px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  font-size: 0.9rem;
+function addSymbol(sym) {
+  const input = document.getElementById('userInput');
+  input.value += sym;
+  input.focus();
 }
 
-.card {
-  background-color: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+// File Upload
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    uploadedImageBase64 = e.target.result;
+    document.getElementById('imagePreview').src = uploadedImageBase64;
+    document.getElementById('imagePreviewContainer').style.display = 'block';
+    document.getElementById('imageUrl').value = '';
+  };
+  reader.readAsDataURL(file);
 }
 
-.card h2 {
-  margin-top: 0;
-  font-size: 1.25rem;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 10px;
-  margin-bottom: 16px;
+function removeSelectedImage() {
+  uploadedImageBase64 = '';
+  document.getElementById('imageFile').value = '';
+  document.getElementById('imagePreviewContainer').style.display = 'none';
 }
 
-/* Practice View */
-.quiz-display {
-  background-color: #0f172a;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 20px;
-  text-align: center;
-  margin-bottom: 16px;
-  min-height: 120px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+// Card Creation
+function handleCardSubmit(e) {
+  e.preventDefault();
+
+  const targetDeck = document.getElementById('targetDeckSelect').value;
+  const prompt = document.getElementById('promptText').value.trim();
+  const imageUrlInput = document.getElementById('imageUrl').value.trim();
+  const answer = document.getElementById('correctAnswer').value.trim();
+  const hint = document.getElementById('hintText').value.trim();
+
+  const finalImage = uploadedImageBase64 || imageUrlInput;
+
+  if (!targetDeck) {
+    alert('Please select or create a group first!');
+    return;
+  }
+
+  if (!prompt && !finalImage) {
+    alert('Please enter a question prompt OR provide an image!');
+    return;
+  }
+
+  const newCard = {
+    id: Date.now().toString(),
+    prompt,
+    image: finalImage,
+    answer,
+    hint
+  };
+
+  decks[targetDeck].push(newCard);
+  saveData();
+
+  if (targetDeck === activeDeckName) {
+    activeQueue.push(newCard);
+  }
+
+  // Reset form
+  document.getElementById('createForm').reset();
+  removeSelectedImage();
+  alert('Card added successfully!');
 }
 
-.quiz-prompt-text {
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin: 0 0 10px 0;
+// Manage Cards
+function renderManageList() {
+  const container = document.getElementById('cardList');
+  container.innerHTML = '';
+
+  const currentCards = decks[activeDeckName] || [];
+
+  if (currentCards.length === 0) {
+    container.innerHTML = '<p class="empty-msg">No cards in this group.</p>';
+    return;
+  }
+
+  currentCards.forEach(card => {
+    const item = document.createElement('div');
+    item.className = 'list-item';
+
+    const promptText = card.prompt || '[Image Only Question]';
+    const thumbHtml = card.image 
+      ? `<img src="${card.image}" class="item-thumb" alt="Thumb">` 
+      : '';
+
+    item.innerHTML = `
+      <div class="item-content">
+        ${thumbHtml}
+        <div class="item-info">
+          <span class="item-prompt">${escapeHtml(promptText)}</span>
+          <span class="item-answer">Answer: ${escapeHtml(card.answer)}</span>
+        </div>
+      </div>
+      <button class="btn-delete" onclick="deleteCard('${card.id}')">Delete</button>
+    `;
+
+    container.appendChild(item);
+  });
 }
 
-.quiz-prompt-img {
-  max-width: 100%;
-  max-height: 250px;
-  border-radius: 6px;
-  object-fit: contain;
+function deleteCard(cardId) {
+  if (confirm('Delete this card?')) {
+    decks[activeDeckName] = decks[activeDeckName].filter(c => c.id !== cardId);
+    activeQueue = activeQueue.filter(c => c.id !== cardId);
+
+    if (currentCardIndex >= activeQueue.length) {
+      currentCardIndex = 0;
+    }
+
+    saveData();
+    renderAll();
+  }
 }
 
-.input-group input[type="text"],
-.form-group input[type="text"] {
-  width: 100%;
-  padding: 12px;
-  font-size: 1rem;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background-color: #0f172a;
-  color: var(--text);
-  box-sizing: border-box;
+function clearCurrentDeck() {
+  if (!activeDeckName) return;
+
+  if (confirm(`Delete the entire "${activeDeckName}" group and all its cards?`)) {
+    delete decks[activeDeckName];
+    saveData();
+
+    const remainingDeckNames = Object.keys(decks);
+    activeDeckName = remainingDeckNames.length > 0 ? remainingDeckNames[0] : '';
+    
+    renderDeckSelectors();
+    resetQueue();
+    renderAll();
+  }
 }
 
-.input-group input[type="text"]:focus,
-.form-group input[type="text"]:focus {
-  outline: none;
-  border-color: var(--primary);
-}
-
-.symbol-bar {
-  display: flex;
-  gap: 6px;
-  margin: 10px 0;
-  flex-wrap: wrap;
-}
-
-.sym-btn {
-  background-color: var(--border);
-  color: var(--text);
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-.sym-btn:hover {
-  background-color: var(--text-muted);
-}
-
-.button-group {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.btn {
-  flex: 1;
-  padding: 12px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  color: white;
-  transition: background-color 0.2s;
-}
-
-.btn-submit { background-color: var(--success); }
-.btn-submit:hover { background-color: var(--success-hover); }
-
-.btn-skip { background-color: var(--primary); }
-.btn-skip:hover { background-color: var(--primary-hover); }
-
-.btn-hint { background-color: var(--warning); }
-.btn-hint:hover { opacity: 0.9; }
-
-.btn-danger-outline {
-  background: transparent;
-  border: 1px solid var(--danger);
-  color: var(--danger);
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-.btn-danger-outline:hover { background: var(--danger); color: white; }
-
-.full-width { width: 100%; }
-
-.feedback-msg {
-  margin-top: 12px;
-  font-weight: bold;
-  text-align: center;
-  min-height: 24px;
-}
-
-/* Forms & Inputs */
-.form-group {
-  margin-bottom: 14px;
-}
-
-.form-group label {
-  display: block;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  margin-bottom: 6px;
-}
-
-.inline-form {
-  display: flex;
-  gap: 10px;
-}
-
-.inline-form input {
-  flex: 1;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background-color: #0f172a;
-  color: var(--text);
-}
-
-.required { color: var(--danger); }
-
-.image-input-toggle {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.divider {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-.image-preview-box {
-  margin-top: 10px;
-}
-
-.image-preview-box img {
-  max-height: 120px;
-  border-radius: 6px;
-}
-
-.btn-remove-img {
-  display: block;
-  margin-top: 4px;
-  background: var(--danger);
-  color: white;
-  border: none;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  cursor: pointer;
-}
-
-/* Manager Section */
-.manager-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 10px;
-  margin-bottom: 16px;
-}
-
-.manager-header h2 {
-  border-bottom: none;
-  padding-bottom: 0;
-  margin-bottom: 0;
-}
-
-.card-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.list-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #0f172a;
-  padding: 12px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-}
-
-.item-content {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.item-thumb {
-  width: 40px;
-  height: 40px;
-  object-fit: cover;
-  border-radius: 4px;
-}
-
-.item-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.item-prompt {
-  font-weight: 600;
-}
-
-.item-answer {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
-.btn-delete {
-  background-color: var(--danger);
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.btn-delete:hover {
-  background-color: var(--danger-hover);
-}
-
-.empty-msg {
-  color: var(--text-muted);
-  font-style: italic;
+function escapeHtml(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
