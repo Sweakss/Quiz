@@ -92,6 +92,8 @@ body {
   border: 1px solid var(--border);
   margin-bottom: 16px;
   font-size: 0.9rem;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .group-banner strong {
@@ -189,6 +191,7 @@ select:focus {
   border-radius: 4px;
   cursor: pointer;
   font-weight: bold;
+  transition: background-color 0.2s;
 }
 
 .sym-btn:hover {
@@ -199,10 +202,12 @@ select:focus {
   display: flex;
   gap: 10px;
   margin-top: 10px;
+  flex-wrap: wrap;
 }
 
 .btn {
   flex: 1;
+  min-width: 80px;
   padding: 12px;
   font-size: 0.95rem;
   font-weight: 600;
@@ -231,6 +236,7 @@ select:focus {
   cursor: pointer;
   font-weight: 600;
   white-space: nowrap;
+  transition: all 0.2s;
 }
 .btn-danger-outline:hover { background: var(--danger); color: white; }
 
@@ -257,15 +263,27 @@ select:focus {
 .select-row {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
+}
+
+.select-row select {
+  flex: 1;
+  min-width: 150px;
 }
 
 .inline-form {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .inline-form input {
   flex: 1;
+  min-width: 150px;
+}
+
+.inline-form button {
+  white-space: nowrap;
 }
 
 .card-divider {
@@ -281,11 +299,19 @@ select:focus {
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
+}
+
+.image-input-toggle input[type="text"],
+.image-input-toggle input[type="file"] {
+  flex: 1;
+  min-width: 120px;
 }
 
 .divider {
   font-size: 0.8rem;
   color: var(--text-muted);
+  flex-shrink: 0;
 }
 
 .image-preview-box {
@@ -295,6 +321,7 @@ select:focus {
 .image-preview-box img {
   max-height: 120px;
   border-radius: 6px;
+  max-width: 100%;
 }
 
 .btn-remove-img {
@@ -307,6 +334,11 @@ select:focus {
   border-radius: 4px;
   font-size: 0.75rem;
   cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-remove-img:hover {
+  background-color: var(--danger-hover);
 }
 
 /* Card Manager Item List */
@@ -326,12 +358,16 @@ select:focus {
   padding: 12px;
   border-radius: 8px;
   border: 1px solid var(--border);
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .item-content {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: 1;
+  min-width: 150px;
 }
 
 .item-thumb {
@@ -339,20 +375,25 @@ select:focus {
   height: 42px;
   object-fit: cover;
   border-radius: 6px;
+  flex-shrink: 0;
 }
 
 .item-info {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-width: 100px;
 }
 
 .item-prompt {
   font-weight: 600;
+  word-break: break-word;
 }
 
 .item-answer {
   font-size: 0.85rem;
   color: var(--text-muted);
+  word-break: break-word;
 }
 
 .btn-delete {
@@ -362,13 +403,173 @@ select:focus {
   padding: 6px 12px;
   border-radius: 6px;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background-color 0.2s;
 }
 
 .btn-delete:hover {
   background-color: var(--danger-hover);
 }
 
+/* Practice Header Row (title + shuffle toggle) */
+.practice-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.practice-header-row h2 {
+  margin: 0;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.shuffle-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.shuffle-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.btn-shuffle {
+  flex: 0 0 auto;
+  min-width: 48px;
+  background-color: var(--border);
+}
+
+.btn-shuffle:hover {
+  background-color: var(--text-muted);
+}
+
+.btn-cancel-edit {
+  background-color: transparent;
+  border: 1px solid var(--text-muted);
+  color: var(--text-muted);
+  margin-top: 10px;
+}
+
+.btn-cancel-edit:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* Manage list: edit + delete button row */
+.item-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-edit {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.btn-edit:hover {
+  background-color: var(--primary-hover);
+}
+
+/* Backup & Restore */
+.backup-note {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.backup-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.backup-actions .btn {
+  flex: 1;
+  min-width: 160px;
+  text-align: center;
+}
+
+.import-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .empty-msg {
   color: var(--text-muted);
   font-style: italic;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 480px) {
+  .app-wrapper {
+    max-width: 100%;
+  }
+
+  .app-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .tab-btn {
+    font-size: 0.8rem;
+    padding: 10px 6px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .button-group {
+    gap: 8px;
+  }
+
+  .btn {
+    padding: 10px;
+    font-size: 0.85rem;
+  }
+
+  .list-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .item-content {
+    width: 100%;
+  }
+
+  .item-actions {
+    width: 100%;
+  }
+
+  .item-actions .btn-edit,
+  .item-actions .btn-delete {
+    flex: 1;
+    text-align: center;
+  }
+
+  .practice-header-row {
+    justify-content: space-between;
+  }
 }
