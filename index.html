@@ -3,101 +3,132 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Custom Study & Science Quiz</title>
+  <title>Custom Study & Quiz App</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
   <header class="app-header">
     <h1>Study Quiz Application</h1>
-    <p>Custom Flashcards & Quiz Practice</p>
+    <!-- Tab Navigation Bar -->
+    <nav class="tab-nav">
+      <button type="button" class="tab-btn active" onclick="switchTab('practiceTab')">Practice Mode</button>
+      <button type="button" class="tab-btn" onclick="switchTab('createTab')">Create Card</button>
+      <button type="button" class="tab-btn" onclick="switchTab('manageTab')">Manage Decks & Cards</button>
+    </nav>
   </header>
 
   <main class="app-container">
     
-    <!-- Top Stats Bar -->
-    <div class="stats-bar">
-      <span>Total Cards: <strong id="statTotal">0</strong></span>
-      <span>Remaining in Session: <strong id="statRemaining">0</strong></span>
+    <!-- Active Group Selector Bar -->
+    <div class="deck-selector-bar">
+      <label for="deckSelect">Active Study Group:</label>
+      <select id="deckSelect" onchange="handleDeckChange()"></select>
     </div>
 
-    <!-- Practice / Quiz View -->
-    <section class="card practice-card">
-      <h2>Practice Mode</h2>
-      
-      <div id="quizDisplay" class="quiz-display">
-        <p class="empty-msg">No cards available. Add some cards below to start practicing!</p>
+    <!-- TAB 1: PRACTICE MODE -->
+    <section id="practiceTab" class="tab-content active">
+      <div class="stats-bar">
+        <span>Cards in Deck: <strong id="statTotal">0</strong></span>
+        <span>Remaining in Session: <strong id="statRemaining">0</strong></span>
       </div>
 
-      <div class="input-group">
-        <input type="text" id="userInput" placeholder="Type your answer here..." autocomplete="off">
-      </div>
-
-      <!-- Quick Math & Science Symbols -->
-      <div class="symbol-bar">
-        <button type="button" class="sym-btn" onclick="addSymbol('→')">→</button>
-        <button type="button" class="sym-btn" onclick="addSymbol('°')">°</button>
-        <button type="button" class="sym-btn" onclick="addSymbol('²')">²</button>
-        <button type="button" class="sym-btn" onclick="addSymbol('³')">³</button>
-        <button type="button" class="sym-btn" onclick="addSymbol('Δ')">Δ</button>
-        <button type="button" class="sym-btn" onclick="addSymbol('±')">±</button>
-      </div>
-
-      <div class="button-group">
-        <button type="button" class="btn btn-submit" onclick="checkAnswer()">Check Answer</button>
-        <button type="button" class="btn btn-skip" onclick="skipCard()">Skip / Next</button>
-        <button type="button" class="btn btn-hint" onclick="showHint()">Hint</button>
-      </div>
-
-      <div id="feedback" class="feedback-msg"></div>
-    </section>
-
-    <!-- Card Creation Form -->
-    <section class="card creation-card">
-      <h2>Create New Card</h2>
-      <form id="createForm" onsubmit="handleCardSubmit(event)">
+      <div class="card practice-card">
+        <h2>Practice</h2>
         
-        <div class="form-group">
-          <label for="promptText">Question / Prompt (Optional if using image)</label>
-          <input type="text" id="promptText" placeholder="e.g., What organelle is shown? or Balance: H2 + O2 -> ?">
+        <div id="quizDisplay" class="quiz-display">
+          <p class="empty-msg">No cards available in this group. Add some cards to start!</p>
         </div>
 
-        <div class="form-group">
-          <label>Image Source (Optional)</label>
-          <div class="image-input-toggle">
-            <input type="text" id="imageUrl" placeholder="Paste Image URL (e.g., https://...)">
-            <span class="divider">OR</span>
-            <input type="file" id="imageFile" accept="image/*" onchange="handleFileUpload(event)">
-          </div>
-          <div id="imagePreviewContainer" class="image-preview-box" style="display: none;">
-            <img id="imagePreview" src="" alt="Preview">
-            <button type="button" class="btn-remove-img" onclick="removeSelectedImage()">Remove Image</button>
-          </div>
+        <div class="input-group">
+          <input type="text" id="userInput" placeholder="Type your answer here..." autocomplete="off">
         </div>
 
-        <div class="form-group">
-          <label for="correctAnswer">Correct Answer(s) <span class="required">*</span></label>
-          <input type="text" id="correctAnswer" placeholder="e.g., Mitochondria (separate multiple answers with commas)" required>
+        <!-- Symbol Bar -->
+        <div class="symbol-bar">
+          <button type="button" class="sym-btn" onclick="addSymbol('→')">→</button>
+          <button type="button" class="sym-btn" onclick="addSymbol('°')">°</button>
+          <button type="button" class="sym-btn" onclick="addSymbol('²')">²</button>
+          <button type="button" class="sym-btn" onclick="addSymbol('³')">³</button>
+          <button type="button" class="sym-btn" onclick="addSymbol('Δ')">Δ</button>
+          <button type="button" class="sym-btn" onclick="addSymbol('±')">±</button>
         </div>
 
-        <div class="form-group">
-          <label for="hintText">Custom Hint (Optional)</label>
-          <input type="text" id="hintText" placeholder="e.g., Powerhouse of the cell">
+        <div class="button-group">
+          <button type="button" class="btn btn-submit" onclick="checkAnswer()">Check Answer</button>
+          <button type="button" class="btn btn-skip" onclick="skipCard()">Skip / Next</button>
+          <button type="button" class="btn btn-hint" onclick="showHint()">Hint</button>
         </div>
 
-        <button type="submit" class="btn btn-submit full-width">Add Card</button>
-      </form>
+        <div id="feedback" class="feedback-msg"></div>
+      </div>
     </section>
 
-    <!-- Card Management List (Delete & View Cards) -->
-    <section class="card manager-card">
-      <div class="manager-header">
-        <h2>Manage Cards</h2>
-        <button type="button" class="btn btn-danger-outline" onclick="clearAllCards()">Delete All Cards</button>
+    <!-- TAB 2: CREATE CARD -->
+    <section id="createTab" class="tab-content">
+      <div class="card creation-card">
+        <h2>Create New Card</h2>
+        <form id="createForm" onsubmit="handleCardSubmit(event)">
+          
+          <div class="form-group">
+            <label for="targetDeckSelect">Add to Group / Deck:</label>
+            <select id="targetDeckSelect"></select>
+          </div>
+
+          <div class="form-group">
+            <label for="promptText">Question / Prompt (Optional if using image)</label>
+            <input type="text" id="promptText" placeholder="e.g., What organelle is shown? or Balance: H2 + O2 -> ?">
+          </div>
+
+          <div class="form-group">
+            <label>Image Source (Optional)</label>
+            <div class="image-input-toggle">
+              <input type="text" id="imageUrl" placeholder="Paste Image URL (e.g., https://...)">
+              <span class="divider">OR</span>
+              <input type="file" id="imageFile" accept="image/*" onchange="handleFileUpload(event)">
+            </div>
+            <div id="imagePreviewContainer" class="image-preview-box" style="display: none;">
+              <img id="imagePreview" src="" alt="Preview">
+              <button type="button" class="btn-remove-img" onclick="removeSelectedImage()">Remove Image</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="correctAnswer">Correct Answer(s) <span class="required">*</span></label>
+            <input type="text" id="correctAnswer" placeholder="e.g., Mitochondria (separate multiple answers with commas)" required>
+          </div>
+
+          <div class="form-group">
+            <label for="hintText">Custom Hint (Optional)</label>
+            <input type="text" id="hintText" placeholder="e.g., Powerhouse of the cell">
+          </div>
+
+          <button type="submit" class="btn btn-submit full-width">Add Card</button>
+        </form>
       </div>
-      
-      <div id="cardList" class="card-list">
-        <!-- Dynamically rendered list of cards -->
+    </section>
+
+    <!-- TAB 3: MANAGE DECKS & CARDS -->
+    <section id="manageTab" class="tab-content">
+      <!-- Group Creation Box -->
+      <div class="card group-creation-card">
+        <h2>Create New Group / Deck</h2>
+        <form onsubmit="handleDeckSubmit(event)" class="inline-form">
+          <input type="text" id="newDeckName" placeholder="Group Name (e.g., Biology Chapter 1, Organic Chem)" required>
+          <button type="submit" class="btn btn-submit">Create Group</button>
+        </form>
+      </div>
+
+      <!-- Card List Manager -->
+      <div class="card manager-card">
+        <div class="manager-header">
+          <h2>Cards in Active Group</h2>
+          <button type="button" class="btn btn-danger-outline" onclick="clearCurrentDeck()">Delete Whole Group</button>
+        </div>
+        
+        <div id="cardList" class="card-list">
+          <!-- Dynamically populated cards -->
+        </div>
       </div>
     </section>
 
