@@ -1,16 +1,17 @@
 :root {
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
-  --success: #16a34a;
-  --success-hover: #15803d;
-  --warning: #d97706;
-  --danger: #dc2626;
-  --danger-hover: #b91c1c;
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --success: #10b981;
+  --success-hover: #059669;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --danger-hover: #dc2626;
   --bg: #0f172a;
   --card-bg: #1e293b;
   --text: #f8fafc;
   --text-muted: #94a3b8;
   --border: #334155;
+  --input-bg: #0b1329;
 }
 
 body {
@@ -18,32 +19,42 @@ body {
   background-color: var(--bg);
   color: var(--text);
   margin: 0;
-  padding: 20px;
+  padding: 20px 10px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  justify-content: center;
+}
+
+.app-wrapper {
+  width: 100%;
+  max-width: 680px;
 }
 
 .app-header {
   text-align: center;
   margin-bottom: 20px;
-  width: 100%;
-  max-width: 650px;
 }
 
 .app-header h1 {
-  margin: 0 0 16px 0;
-  font-size: 1.8rem;
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: -0.5px;
 }
 
-/* Tab Navigation */
+.subtitle {
+  color: var(--text-muted);
+  margin: 4px 0 16px 0;
+  font-size: 0.9rem;
+}
+
+/* Tab Navigation Styling */
 .tab-nav {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   background-color: var(--card-bg);
   padding: 6px;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid var(--border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .tab-btn {
@@ -51,84 +62,58 @@ body {
   background: transparent;
   border: none;
   color: var(--text-muted);
-  padding: 10px;
+  padding: 12px 8px;
   font-size: 0.9rem;
   font-weight: 600;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s ease-in-out;
 }
 
 .tab-btn:hover {
   color: var(--text);
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .tab-btn.active {
   background-color: var(--primary);
-  color: white;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
 }
 
-.app-container {
-  width: 100%;
-  max-width: 650px;
-}
-
-/* Deck Selector */
-.deck-selector-bar {
+/* Active Group Status Banner */
+.group-banner {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
   background-color: var(--card-bg);
-  padding: 12px 16px;
-  border-radius: 8px;
+  padding: 12px 18px;
+  border-radius: 10px;
   border: 1px solid var(--border);
   margin-bottom: 16px;
-}
-
-.deck-selector-bar label {
-  font-weight: 600;
   font-size: 0.9rem;
-  white-space: nowrap;
 }
 
-select {
-  width: 100%;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background-color: #0f172a;
-  color: var(--text);
-  font-size: 0.95rem;
-  outline: none;
+.group-banner strong {
+  color: var(--primary);
 }
 
-/* Tab Visibility Logic */
+/* Tab Switching Layout */
 .tab-content {
   display: none;
 }
 
 .tab-content.active {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.stats-bar {
-  display: flex;
-  justify-content: space-between;
-  background-color: var(--card-bg);
-  padding: 12px 20px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  font-size: 0.9rem;
+  display: block;
 }
 
 .card {
   background-color: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  margin-bottom: 16px;
 }
 
 .card h2 {
@@ -141,13 +126,13 @@ select {
 
 /* Practice View */
 .quiz-display {
-  background-color: #0f172a;
+  background-color: var(--input-bg);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 20px;
+  padding: 24px 16px;
   text-align: center;
   margin-bottom: 16px;
-  min-height: 120px;
+  min-height: 130px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -155,7 +140,7 @@ select {
 }
 
 .quiz-prompt-text {
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   font-weight: 600;
   margin: 0 0 10px 0;
 }
@@ -167,28 +152,32 @@ select {
   object-fit: contain;
 }
 
+/* Inputs & Form Controls */
 .input-group input[type="text"],
-.form-group input[type="text"] {
+.form-group input[type="text"],
+select {
   width: 100%;
   padding: 12px;
-  font-size: 1rem;
-  border-radius: 6px;
+  font-size: 0.95rem;
+  border-radius: 8px;
   border: 1px solid var(--border);
-  background-color: #0f172a;
+  background-color: var(--input-bg);
   color: var(--text);
   box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s;
 }
 
 .input-group input[type="text"]:focus,
-.form-group input[type="text"]:focus {
-  outline: none;
+.form-group input[type="text"]:focus,
+select:focus {
   border-color: var(--primary);
 }
 
 .symbol-bar {
   display: flex;
   gap: 6px;
-  margin: 10px 0;
+  margin: 12px 0;
   flex-wrap: wrap;
 }
 
@@ -218,7 +207,7 @@ select {
   font-size: 0.95rem;
   font-weight: 600;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   color: white;
   transition: background-color 0.2s;
@@ -237,9 +226,11 @@ select {
   background: transparent;
   border: 1px solid var(--danger);
   color: var(--danger);
-  padding: 6px 12px;
-  border-radius: 6px;
+  padding: 10px 14px;
+  border-radius: 8px;
   cursor: pointer;
+  font-weight: 600;
+  white-space: nowrap;
 }
 .btn-danger-outline:hover { background: var(--danger); color: white; }
 
@@ -252,9 +243,8 @@ select {
   min-height: 24px;
 }
 
-/* Forms & Inputs */
 .form-group {
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .form-group label {
@@ -264,6 +254,11 @@ select {
   margin-bottom: 6px;
 }
 
+.select-row {
+  display: flex;
+  gap: 10px;
+}
+
 .inline-form {
   display: flex;
   gap: 10px;
@@ -271,11 +266,13 @@ select {
 
 .inline-form input {
   flex: 1;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background-color: #0f172a;
-  color: var(--text);
+}
+
+.card-divider {
+  border: 0;
+  height: 1px;
+  background: var(--border);
+  margin: 16px 0;
 }
 
 .required { color: var(--danger); }
@@ -312,27 +309,12 @@ select {
   cursor: pointer;
 }
 
-/* Manager Section */
-.manager-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 10px;
-  margin-bottom: 16px;
-}
-
-.manager-header h2 {
-  border-bottom: none;
-  padding-bottom: 0;
-  margin-bottom: 0;
-}
-
+/* Card Manager Item List */
 .card-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 300px;
+  max-height: 320px;
   overflow-y: auto;
 }
 
@@ -340,9 +322,9 @@ select {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #0f172a;
+  background-color: var(--input-bg);
   padding: 12px;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid var(--border);
 }
 
@@ -353,10 +335,10 @@ select {
 }
 
 .item-thumb {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
 .item-info {
@@ -378,7 +360,7 @@ select {
   color: white;
   border: none;
   padding: 6px 12px;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
 }
 
