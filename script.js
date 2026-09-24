@@ -390,16 +390,16 @@ function handleCardSubmit(e) {
 }
 
 // Edit Card
-function editCard(cardId) {
-  const card = groups[activeGroupName].find(c => c.id === cardId);
+function editCard(cardId, groupName) {
+  const card = groups[groupName].find(c => c.id === cardId);
   if (!card) return;
 
   editingCardId = card.id;
-  editingCardOriginalGroup = activeGroupName;
+  editingCardOriginalGroup = groupName;
 
   switchToTab('createTab');
 
-  document.getElementById('targetDeckSelect').value = activeGroupName;
+  document.getElementById('targetDeckSelect').value = groupName;
   document.getElementById('promptText').value = card.prompt || '';
   document.getElementById('correctAnswer').value = card.answer || '';
   document.getElementById('hintText').value = card.hint || '';
@@ -458,7 +458,7 @@ function renderManageList() {
         </div>
       </div>
       <div class="item-actions">
-        <button class="btn-edit" onclick="editCard('${card.id}')">Edit</button>
+        <button class="btn-edit" onclick="editCard('${card.id}', '${activeGroupName}')">Edit</button>
         <button class="btn-delete" onclick="deleteCard('${card.id}')">Delete</button>
       </div>
     `;
