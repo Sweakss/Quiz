@@ -32,7 +32,13 @@
       <!-- TAB 1: PRACTICE MODE -->
       <section id="practiceTab" class="tab-content active">
         <div class="card practice-card">
-          <h2>Practice</h2>
+          <div class="practice-header-row">
+            <h2>Practice</h2>
+            <label class="shuffle-toggle">
+              <input type="checkbox" id="shuffleToggle" onchange="toggleShuffleMode()">
+              Shuffle
+            </label>
+          </div>
           
           <div id="quizDisplay" class="quiz-display">
             <p class="empty-msg">No cards available in this group. Add some cards to start!</p>
@@ -44,18 +50,19 @@
 
           <!-- Symbol Bar -->
           <div class="symbol-bar">
-            <button type="button" class="sym-btn" onclick="addSymbol('→')">→</button>
-            <button type="button" class="sym-btn" onclick="addSymbol('°')">°</button>
-            <button type="button" class="sym-btn" onclick="addSymbol('²')">²</button>
-            <button type="button" class="sym-btn" onclick="addSymbol('³')">³</button>
-            <button type="button" class="sym-btn" onclick="addSymbol('Δ')">Δ</button>
-            <button type="button" class="sym-btn" onclick="addSymbol('±')">±</button>
+            <button type="button" class="sym-btn" onclick="addSymbol('→')" aria-label="Insert arrow symbol">→</button>
+            <button type="button" class="sym-btn" onclick="addSymbol('°')" aria-label="Insert degree symbol">°</button>
+            <button type="button" class="sym-btn" onclick="addSymbol('²')" aria-label="Insert squared symbol">²</button>
+            <button type="button" class="sym-btn" onclick="addSymbol('³')" aria-label="Insert cubed symbol">³</button>
+            <button type="button" class="sym-btn" onclick="addSymbol('Δ')" aria-label="Insert delta symbol">Δ</button>
+            <button type="button" class="sym-btn" onclick="addSymbol('±')" aria-label="Insert plus-minus symbol">±</button>
           </div>
 
           <div class="button-group">
             <button type="button" class="btn btn-submit" onclick="checkAnswer()">Check Answer</button>
             <button type="button" class="btn btn-skip" onclick="skipCard()">Skip / Next</button>
             <button type="button" class="btn btn-hint" onclick="showHint()">Hint</button>
+            <button type="button" class="btn btn-shuffle" onclick="shuffleQueueNow()" title="Shuffle remaining cards">🔀</button>
           </div>
 
           <div id="feedback" class="feedback-msg"></div>
@@ -65,7 +72,7 @@
       <!-- TAB 2: CREATE CARD -->
       <section id="createTab" class="tab-content">
         <div class="card creation-card">
-          <h2>Create New Card</h2>
+          <h2 id="createCardHeading">Create New Card</h2>
           <form id="createForm" onsubmit="handleCardSubmit(event)">
             
             <div class="form-group">
@@ -81,9 +88,9 @@
             <div class="form-group">
               <label>Image Source (Optional)</label>
               <div class="image-input-toggle">
-                <input type="text" id="imageUrl" placeholder="Paste Image URL (e.g., https://...)">
+                <input type="text" id="imageUrl" placeholder="Paste Image URL (e.g., https://...)" aria-label="Image URL">
                 <span class="divider">OR</span>
-                <input type="file" id="imageFile" accept="image/*" onchange="handleFileUpload(event)">
+                <input type="file" id="imageFile" accept="image/*" onchange="handleFileUpload(event)" aria-label="Upload image file">
               </div>
               <div id="imagePreviewContainer" class="image-preview-box" style="display: none;">
                 <img id="imagePreview" src="" alt="Preview">
@@ -101,7 +108,8 @@
               <input type="text" id="hintText" placeholder="e.g., Powerhouse of the cell">
             </div>
 
-            <button type="submit" class="btn btn-submit full-width">Add Card</button>
+            <button type="submit" class="btn btn-submit full-width" id="createSubmitBtn">Add Card</button>
+            <button type="button" class="btn btn-cancel-edit full-width" id="cancelEditBtn" onclick="cancelEdit()" style="display: none;">Cancel Edit</button>
           </form>
         </div>
       </section>
@@ -137,6 +145,19 @@
           
           <div id="cardList" class="card-list">
             <!-- Dynamic card items render here -->
+          </div>
+        </div>
+
+        <!-- Backup & Restore Panel -->
+        <div class="card backup-card">
+          <h2>Backup & Restore</h2>
+          <p class="backup-note">Your cards are only stored in this browser. Export a backup regularly, especially before clearing browser data or switching devices.</p>
+          <div class="backup-actions">
+            <button type="button" class="btn btn-skip" onclick="exportData()">⬇ Export All Data</button>
+            <label class="btn btn-submit import-label">
+              ⬆ Import Backup
+              <input type="file" id="importFile" accept="application/json,.json" onchange="handleImportFile(event)" hidden>
+            </label>
           </div>
         </div>
       </section>
