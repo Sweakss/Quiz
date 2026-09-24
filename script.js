@@ -1,16 +1,16 @@
 // Storage Key
-const STORAGE_KEY = 'custom_quiz_app_decks';
+const STORAGE_KEY = 'quiz_app_groups';
 
-// Global State
-let decks = {}; // Format: { "DeckName": [ { cardObj }, ... ] }
-let activeDeckName = 'Default Group';
+// Application State
+let groups = {}; // Structure: { "Group Name": [ { cardObj }, ... ] }
+let activeGroupName = 'Biology Basics';
 let activeQueue = [];
 let currentCardIndex = 0;
 let uploadedImageBase64 = '';
 
-// Sample Default Data
-const defaultDecks = {
-  "Biology": [
+// Sample Initial Data
+const defaultGroups = {
+  "Biology Basics": [
     {
       id: '1',
       prompt: 'What organelle produces ATP in eukaryotic cells?',
@@ -30,90 +30,121 @@ const defaultDecks = {
   ]
 };
 
-// Initialize
+// Initialize App
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
-  setupEvents();
-  renderDeckSelectors();
+  setupTabEvents();
+  setupKeyEvents();
   renderAll();
 });
 
 function loadData() {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored) {
-    decks = JSON.parse(stored);
+    groups = JSON.parse(stored);
   } else {
-    decks = defaultDecks;
+    groups = defaultGroups;
     saveData();
   }
-  
-  const deckNames = Object.keys(decks);
-  if (deckNames.length > 0) {
-    activeDeckName = deckNames[0];
+
+  const groupKeys = Object.keys(groups);
+  if (groupKeys.length > 0) {
+    activeGroupName = groupKeys[0];
+  } else {
+    activeGroupName = '';
   }
   resetQueue();
 }
 
 function saveData() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(decks));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(groups));
 }
 
-function setupEvents() {
+// Tab Switching Setup
+function setupTabEvents() {
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetTabId = btn.getAttribute('data-tab');
+
+      // Update button active state
+      tabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // Hide all tabs and display target
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.getElementById(targetTabId).classList.add('active');
+
+      renderAll();
+    });
+  });
+}
+
+function setupKeyEvents() {
   document.getElementById('userInput').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') checkAnswer();
   });
 }
 
-// Tab Switching Logic
-function switchTab(tabId) {
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-
-  document.getElementById(tabId).classList.add('active');
-  
-  const navBtns = document.querySelectorAll('.tab-btn');
-  if (tabId === 'practiceTab') navBtns[0].classList.add('active');
-  if (tabId === 'createTab') navBtns[1].classList.add('active');
-  if (tabId === 'manageTab') navBtns[2].classList.add('active');
-
-  renderAll();
+function resetQueue() {
+  if (activeGroupName && groups[activeGroupName]) {
+    activeQueue = [...groups[activeGroupName]];
+  } else {
+    activeQueue = [];
+  }
+  currentCardIndex = 0;
 }
 
-// Deck Selectors
-function renderDeckSelectors() {
+function renderAll() {
+  renderGroupDropdowns();
+  updateHeaderBanner();
+  renderPracticeCard();
+  renderManageList();
+}
+
+// Group Dropdowns
+function renderGroupDropdowns() {
   const deckSelect = document.getElementById('deckSelect');
   const targetDeckSelect = document.getElementById('targetDeckSelect');
-  
+
   deckSelect.innerHTML = '';
   targetDeckSelect.innerHTML = '';
 
-  const names = Object.keys(decks);
+  const groupNames = Object.keys(groups);
 
-  if (names.length === 0) {
+  if (groupNames.length === 0) {
     deckSelect.innerHTML = '<option value="">No Groups Found</option>';
     targetDeckSelect.innerHTML = '<option value="">No Groups Found</option>';
     return;
   }
 
-  names.forEach(name => {
+  groupNames.forEach(name => {
     const opt1 = document.createElement('option');
     opt1.value = name;
     opt1.textContent = name;
-    if (name === activeDeckName) opt1.selected = true;
+    if (name === activeGroupName) opt1.selected = true;
     deckSelect.appendChild(opt1);
 
     const opt2 = document.createElement('option');
     opt2.value = name;
     opt2.textContent = name;
-    if (name === activeDeckName) opt2.selected = true;
+    if (name === activeGroupName) opt2.selected = true;
     targetDeckSelect.appendChild(opt2);
   });
 }
 
+function updateHeaderBanner() {
+  document.getElementById('activeGroupTitle').textContent = activeGroupName || 'None Selected';
+  const total = (activeGroupName && groups[activeGroupName]) ? groups[activeGroupName].length : 0;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statRemaining').textContent = activeQueue.length;
+}
+
 function handleDeckChange() {
   const select = document.getElementById('deckSelect');
-  activeDeckName = select.value;
-  document.getElementById('targetDeckSelect').value = activeDeckName;
+  activeGroupName = select.value;
   resetQueue();
   renderAll();
 }
@@ -124,43 +155,36 @@ function handleDeckSubmit(e) {
   const name = input.value.trim();
 
   if (!name) return;
-  if (decks[name]) {
+  if (groups[name]) {
     alert('A group with this name already exists!');
     return;
   }
 
-  decks[name] = [];
-  activeDeckName = name;
+  groups[name] = [];
+  activeGroupName = name;
   saveData();
 
   input.value = '';
-  renderDeckSelectors();
   resetQueue();
   renderAll();
 }
 
-function resetQueue() {
-  if (decks[activeDeckName]) {
-    activeQueue = [...decks[activeDeckName]];
-  } else {
-    activeQueue = [];
+function deleteActiveGroup() {
+  if (!activeGroupName) return;
+
+  if (confirm(`Are you sure you want to delete the entire group "${activeGroupName}" and all of its cards?`)) {
+    delete groups[activeGroupName];
+    saveData();
+
+    const remainingGroups = Object.keys(groups);
+    activeGroupName = remainingGroups.length > 0 ? remainingGroups[0] : '';
+    
+    resetQueue();
+    renderAll();
   }
-  currentCardIndex = 0;
 }
 
-function renderAll() {
-  updateStats();
-  renderPracticeCard();
-  renderManageList();
-}
-
-function updateStats() {
-  const total = decks[activeDeckName] ? decks[activeDeckName].length : 0;
-  document.getElementById('statTotal').textContent = total;
-  document.getElementById('statRemaining').textContent = activeQueue.length;
-}
-
-// Practice Rendering & Logic
+// Practice Execution
 function renderPracticeCard() {
   const display = document.getElementById('quizDisplay');
   const feedback = document.getElementById('feedback');
@@ -168,14 +192,14 @@ function renderPracticeCard() {
   document.getElementById('userInput').value = '';
 
   if (activeQueue.length === 0) {
-    const totalInDeck = decks[activeDeckName] ? decks[activeDeckName].length : 0;
-    if (totalInDeck > 0) {
+    const totalInGroup = (activeGroupName && groups[activeGroupName]) ? groups[activeGroupName].length : 0;
+    if (totalInGroup > 0) {
       display.innerHTML = `
-        <p class="quiz-prompt-text">🎉 Group Practice Complete!</p>
+        <p class="quiz-prompt-text">🎉 Practice Completed for "${escapeHtml(activeGroupName)}"!</p>
         <button class="btn btn-skip" onclick="resetQueue(); renderAll();">Restart Group</button>
       `;
     } else {
-      display.innerHTML = `<p class="empty-msg">No cards in this group. Add cards in the 'Create Card' tab!</p>`;
+      display.innerHTML = `<p class="empty-msg">No cards in this group. Go to 'Create Card' tab to add some!</p>`;
     }
     return;
   }
@@ -265,11 +289,11 @@ function removeSelectedImage() {
   document.getElementById('imagePreviewContainer').style.display = 'none';
 }
 
-// Card Creation
+// Card Submission
 function handleCardSubmit(e) {
   e.preventDefault();
 
-  const targetDeck = document.getElementById('targetDeckSelect').value;
+  const targetGroup = document.getElementById('targetDeckSelect').value;
   const prompt = document.getElementById('promptText').value.trim();
   const imageUrlInput = document.getElementById('imageUrl').value.trim();
   const answer = document.getElementById('correctAnswer').value.trim();
@@ -277,13 +301,13 @@ function handleCardSubmit(e) {
 
   const finalImage = uploadedImageBase64 || imageUrlInput;
 
-  if (!targetDeck) {
+  if (!targetGroup) {
     alert('Please select or create a group first!');
     return;
   }
 
   if (!prompt && !finalImage) {
-    alert('Please enter a question prompt OR provide an image!');
+    alert('Please provide a question text OR an image!');
     return;
   }
 
@@ -295,25 +319,24 @@ function handleCardSubmit(e) {
     hint
   };
 
-  decks[targetDeck].push(newCard);
+  groups[targetGroup].push(newCard);
   saveData();
 
-  if (targetDeck === activeDeckName) {
+  if (targetGroup === activeGroupName) {
     activeQueue.push(newCard);
   }
 
-  // Reset form
   document.getElementById('createForm').reset();
   removeSelectedImage();
-  alert('Card added successfully!');
+  alert(`Card added to "${targetGroup}"!`);
 }
 
-// Manage Cards
+// Card List Manager
 function renderManageList() {
   const container = document.getElementById('cardList');
   container.innerHTML = '';
 
-  const currentCards = decks[activeDeckName] || [];
+  const currentCards = (activeGroupName && groups[activeGroupName]) ? groups[activeGroupName] : [];
 
   if (currentCards.length === 0) {
     container.innerHTML = '<p class="empty-msg">No cards in this group.</p>';
@@ -346,7 +369,7 @@ function renderManageList() {
 
 function deleteCard(cardId) {
   if (confirm('Delete this card?')) {
-    decks[activeDeckName] = decks[activeDeckName].filter(c => c.id !== cardId);
+    groups[activeGroupName] = groups[activeGroupName].filter(c => c.id !== cardId);
     activeQueue = activeQueue.filter(c => c.id !== cardId);
 
     if (currentCardIndex >= activeQueue.length) {
@@ -354,22 +377,6 @@ function deleteCard(cardId) {
     }
 
     saveData();
-    renderAll();
-  }
-}
-
-function clearCurrentDeck() {
-  if (!activeDeckName) return;
-
-  if (confirm(`Delete the entire "${activeDeckName}" group and all its cards?`)) {
-    delete decks[activeDeckName];
-    saveData();
-
-    const remainingDeckNames = Object.keys(decks);
-    activeDeckName = remainingDeckNames.length > 0 ? remainingDeckNames[0] : '';
-    
-    renderDeckSelectors();
-    resetQueue();
     renderAll();
   }
 }
